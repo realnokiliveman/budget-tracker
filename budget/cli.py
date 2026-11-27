@@ -6,12 +6,17 @@ import functools
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
+from typing import TypeVar
 
+from budget.models import clean_category, parse_amount
 from budget.rates import CurrencyConverter
 from budget.storage import JsonStorage
 from budget.tracker import BudgetTracker
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+MAX_TRIES = 3
+MONTH_PROMPT = "Month YYYY-MM (blank = this month): "
+T = TypeVar("T")
 
 MENU = """
 === Budget tracker ===
@@ -87,6 +92,19 @@ class BudgetApp:
         if storage.warning:
             self.say(f"! {storage.warning} Starting with an empty budget.")
 
+    def ask_valid(self, prompt: str, parse: Callable[[str], T]) -> T:
+        """Ask until ``parse`` accepts the answer, so errors show up right away.
+
+        Gives up with ValueError after MAX_TRIES wrong answers.
+        """
+        for _ in range(MAX_TRIES):
+            answer = self.ask(prompt)
+            try:
+                return parse(answer)
+            except ValueError as error:
+                self.say(f"! {error} - try again.")
+        raise ValueError("too many wrong answers, back to the menu")
+
     def run(self) -> None:
         """Show the menu until the user quits (or presses Ctrl+C / Ctrl+D)."""
         commands = {
@@ -122,9 +140,9 @@ class BudgetApp:
     @friendly_errors
     def add_expense(self) -> None:
         """Ask for an expense and store it; warn if a limit is passed."""
-        amount = self.ask(f"Amount ({self.tracker.currency}): ")
-        category = self.ask("Category (e.g. food, transport): ")
-        day = parse_day(self.ask("Date YYYY-MM-DD (blank = today): "))
+        amount = self.ask_valid(f"Amount ({self.tracker.currency}): ", parse_amount)
+        category = self.ask_valid("Category (e.g. food, transport): ", clean_category)
+        day = self.ask_valid("Date YYYY-MM-DD (blank = today): ", parse_day)
         note = self.ask("Note (optional): ")
         expense = self.tracker.add_expense(amount, category, day, note)
         self.say(f"Added: {expense}")
@@ -135,7 +153,7 @@ class BudgetApp:
     @friendly_errors
     def list_expenses(self) -> None:
         """Print every expense in a month."""
-        year, month = parse_month(self.ask("Month YYYY-MM (blank = this month): "))
+        year, month = self.ask_valid(MONTH_PROMPT, parse_month)
         found = False
         for expense in self.tracker.expenses_in_month(year, month):
             self.say(str(expense))
@@ -146,8 +164,10 @@ class BudgetApp:
     @friendly_errors
     def set_limit(self) -> None:
         """Set a monthly limit for a category."""
-        category = self.ask("Category: ")
-        amount = self.ask(f"Monthly limit ({self.tracker.currency}): ")
+        category = self.ask_valid("Category: ", clean_category)
+        amount = self.ask_valid(
+            f"Monthly limit ({self.tracker.currency}): ", parse_amount
+        )
         self.tracker.set_limit(category, amount)
         self.say("Limit saved.")
 
@@ -160,7 +180,7 @@ class BudgetApp:
     @friendly_errors
     def show_summary(self) -> None:
         """Print spending per category against limits, and the total."""
-        year, month = parse_month(self.ask("Month YYYY-MM (blank = this month): "))
+        year, month = self.ask_valid(MONTH_PROMPT, parse_month)
         summaries = self.tracker.monthly_summary(year, month)
         if not summaries:
             self.say(f"Nothing recorded for {year}-{month:02d}.")
@@ -174,7 +194,7 @@ class BudgetApp:
     @friendly_errors
     def convert_total(self) -> None:
         """Show a month's total in another currency."""
-        year, month = parse_month(self.ask("Month YYYY-MM (blank = this month): "))
+        year, month = self.ask_valid(MONTH_PROMPT, parse_month)
         target = self.ask("Convert to (e.g. USD, EUR, GEL): ")
         total = self.tracker.total_for_month(year, month)
         converted = self.converter.convert(total, self.tracker.currency, target)
