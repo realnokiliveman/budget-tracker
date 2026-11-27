@@ -17,7 +17,7 @@ CS105BKK final project, by Lasha.
 ### macOS
 
 ```bash
-git clone https://github.com/<your-username>/budget-tracker.git
+git clone https://github.com/realnokiliveman/budget-tracker.git
 cd budget-tracker
 python3 main.py          # or: python3 -m budget
 ```
@@ -25,7 +25,7 @@ python3 main.py          # or: python3 -m budget
 ### Windows (PowerShell or CMD)
 
 ```powershell
-git clone https://github.com/<your-username>/budget-tracker.git
+git clone https://github.com/realnokiliveman/budget-tracker.git
 cd budget-tracker
 py main.py               # or: python main.py, or: py -m budget
 ```
