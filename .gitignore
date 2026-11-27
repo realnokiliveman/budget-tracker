@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Tools
+.pytest_cache/
+.ruff_cache/
+
+# Your own data (created when you run the app)
+data/budget.json
+data/budget.json.broken
+data/rates_cache.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
