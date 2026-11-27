@@ -1,0 +1,18 @@
+{
+  "result": "success",
+  "provider": "https://www.exchangerate-api.com",
+  "time_last_update_utc": "Thu, 26 Nov 2026 00:02:31 +0000",
+  "base_code": "USD",
+  "rates": {
+    "USD": 1,
+    "EUR": 0.9121,
+    "GBP": 0.763394,
+    "THB": 34.097062,
+    "GEL": 2.590268,
+    "JPY": 159.175491,
+    "CNY": 6.683199,
+    "RUB": 82.332948,
+    "TRY": 50.723306,
+    "AUD": 1.513274
+  }
+}
